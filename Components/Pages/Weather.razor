@@ -1,0 +1,151 @@
+﻿@page "/weather"
+@inject HttpClient Http
+@inject IConfiguration Configuration
+@rendermode InteractiveServer
+@using System.Net
+
+<PageTitle>Weather</PageTitle>
+
+<h1>Here be Weather information! 😊</h1>
+
+<input @bind="city" placeholder="Enter city name" />
+<button @onclick="FetchWeather">⛈️ Weather please!</button>
+
+@if (isLoading)
+{
+    <p><em>Vejret hentes, vent venligst ( ͡° ͜ʖ ͡°) ...</em></p>
+}
+else if (weatherData != null)
+{
+    <div class="weather-card">
+        <div class="weather-compact">
+            <h4>@weatherData?.location.name - @weatherData?.location.country</h4>
+            <h3>@weatherData?.current.temperature &deg;C</h3>
+            @if (weatherData?.current.weather_icons?.Length > 0)
+            {
+            <img src="@weatherData?.current.weather_icons[0]" alt="Weather Icon" class="weather-icon" />
+            }
+            @if (weatherData?.current.weather_descriptions?.Length > 0)
+            {
+            <p>@weatherData?.current.weather_descriptions[0]</p>
+            }
+        </div>
+
+        <div class="weather-details">
+            <h4>Additional Info:</h4>
+            <ul>
+                <li><strong>Wind:</strong> @weatherData?.current.wind_speed km/h</li>
+                <li><strong>Humidity:</strong> @weatherData?.current.humidity %</li>
+                <li><strong>Cloud Cover:</strong> @weatherData?.current.cloudcover %</li>
+                <li><strong>Pressure:</strong> @weatherData?.current.pressure hPa</li>
+                <li><strong>Feels Like:</strong> @weatherData?.current.feelslike &deg;C</li>
+                <li><strong>Visibility:</strong> @weatherData?.current.visibility km</li>
+            </ul>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <p style="color: red;">@errorMessage</p>
+}
+
+
+@code {
+    private string? errorMessage;
+    private string city { get; set; } = "";
+    private Rootobject? weatherData;
+    private bool isLoading = false;
+    private string accessKey => Configuration["WeatherApi:access_key"];
+    private string baseUrl => Configuration["WeatherApi:BaseUrl"];
+
+    private async Task FetchWeather()
+    {
+        errorMessage = null;
+        if (string.IsNullOrWhiteSpace(city)) return;
+
+        isLoading = true;
+
+        try
+        {
+            string requestUrl = $"{baseUrl}?access_key={accessKey}&query={city}";
+            HttpResponseMessage response = await Http.GetAsync(requestUrl);
+            Console.WriteLine($"HTTP Status Code: {response.StatusCode}");
+
+            // If the response is not successful, set an error message and return
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                errorMessage = "City not found. Please enter a valid city name.";
+                isLoading = false;
+                return;
+            }
+            // Deserialize only if successful
+            weatherData = await response.Content.ReadFromJsonAsync<Rootobject>();
+            // Ensure weatherData isn't null before proceeding
+            if (weatherData == null)
+            {
+                errorMessage = $"Error: {response.StatusCode}";
+                isLoading = false;
+                return;
+            }
+         
+        }
+
+
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching weather: {ex.Message}");
+            errorMessage = "An error occurred while fetching the weather data.";
+        }
+
+        isLoading = false;
+    }
+
+    public class Rootobject
+    {
+        public Request request { get; set; } = new Request();
+        public Location location { get; set; } = new Location();
+        public Current current { get; set; } = new Current();
+    }
+
+    public class Request
+    {
+        public string type { get; set; } = "";
+        public string query { get; set; } = "";
+        public string language { get; set; } = "";
+        public string unit { get; set; } = "";
+    }
+
+    public class Location
+    {
+        public string name { get; set; } = "";
+        public string country { get; set; } = "";
+        public string region { get; set; } = "";
+        public string lat { get; set; } = "";
+        public string lon { get; set; } = "";
+        public string timezone_id { get; set; } = "";
+        public string localtime { get; set; } = "";
+        public int localtime_epoch { get; set; }
+        public string utc_offset { get; set; } = "";
+    }
+
+    public class Current
+    {
+        public string observation_time { get; set; } = "";
+        public int temperature { get; set; }
+        public int weather_code { get; set; }
+        public string[] weather_icons { get; set; } = Array.Empty<string>();
+        public string[] weather_descriptions { get; set; } = Array.Empty<string>();
+        public int wind_speed { get; set; }
+        public int wind_degree { get; set; }
+        public string wind_dir { get; set; } = "";
+        public int pressure { get; set; }
+        public int precip { get; set; }
+        public int humidity { get; set; }
+        public int cloudcover { get; set; }
+        public int feelslike { get; set; }
+        public int uv_index { get; set; }
+        public int visibility { get; set; }
+        public string is_day { get; set; } = "";
+    }
+}

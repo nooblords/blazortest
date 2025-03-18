@@ -1,0 +1,48 @@
+﻿@page "/counter"
+@rendermode InteractiveServer
+@using blazortest.Models
+
+<PageTitle>Counter</PageTitle>
+
+<h1>Cookie Clicker</h1>
+
+<p role="status">Number of cookies: @currentCount</p>
+@if (ShowInput)
+{
+    <input type="number" @oninput="UpdateMultiplier" class="form-control" placeholder="Indtast multiplikator" />
+}
+
+<button class="btn btn-primary mt-2, " @onclick="IncrementCount">Click for Cookie! 🍪</button>
+<br />
+<p>People have clicked @CounterModel?.Count times for cookies!</p>
+
+@code {
+    [CascadingParameter]
+    private CounterModel? CounterModel { get; set; }
+    private int currentCount = 0;
+
+    [Parameter]
+    public int Multiplier { get; set; } = 1;
+    [Parameter]
+    public bool ShowInput { get; set; } = true; // Standard: input vises
+
+    private int currentMultiplier;
+
+    protected override void OnInitialized()
+    {
+        currentMultiplier = Multiplier;
+    }
+
+    private void UpdateMultiplier(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newMultiplier))
+        {
+            currentMultiplier = newMultiplier;
+        }
+    }
+
+    private void IncrementCount()
+    {
+        CounterModel?.IncrementCount(); 
+    }
+}

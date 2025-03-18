@@ -1,0 +1,26 @@
+# Ignorer konfigurationsfiler med adgangsoplysninger (følsomme data)
+appsettings.json
+appsettings.Development.json
+secrets.json
+
+# Ignorer miljøfiler (miljøvariabler)
+.env
+
+# Ignorer build- og afhængighedsfiler
+bin/
+obj/
+node_modules/
+wwwroot/dist/
+
+# Ignorer bruger-specifikke filer (kun relevante lokalt)
+*.user
+*.vs
+*.suo
+*.vscode
+
+# Ignorer lokale databasefiler
+*.db
+*.db-journal
+
+# Ignorer Azure Service-filer (hvis du bruger lokale secrets)
+.azure/
